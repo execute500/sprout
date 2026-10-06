@@ -148,6 +148,14 @@ BeSCPBox:AddToggle("SCPESP", { Text = "SCP ESP" })
 BeSCPBox:AddToggle("MTFESP", { Text = "MTF ESP" })
 BeSCPBox:AddToggle("GuardESP", { Text = "守卫ESP" })
 BeSCPBox:AddDivider()
+BeSCPBox:AddButton("拒绝空气墙", function()
+	for _, child in pairs(Workspace.Facility.Special:GetChildren()) do
+		if child.Name == "GuardSpawnBarrier" or child.Name == "MtfSpawnBarrier" then
+			child:Destroy()
+		end
+	end
+	Library:Notify("删除成功!")
+end)
 BeSCPBox:AddToggle("Auto035", { Text = "自动035" })
 BeSCPBox:AddToggle("AutoClothes", { Text = "自动穿衣😀" })
 
