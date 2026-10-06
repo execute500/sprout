@@ -1,4 +1,4 @@
-local version = "v0.0.2"
+local version = "v0.0.3"
 local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
 local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
@@ -29,6 +29,7 @@ Services = setmetatable({}, {
 	end,
 })
 
+local Workspace = Services.Workspace
 local Players = Services.Players
 local RunService = Services.RunService
 local ProximityPromptService = Services.ProximityPromptService
@@ -168,6 +169,13 @@ local LightBox = Tabs.Vision:AddRightGroupbox("环境")
 LightBox:AddSlider("Brightness", { Text = "亮度", Max = 10, Default = 2 })
 LightBox:AddToggle("FullBright", { Text = "全亮" })
 LightBox:AddToggle("Nofog", { Text = "无雾" })
+
+local SelfBox = Tabs.Vision:AddRightGroupbox("自身")
+SelfBox:AddToggle(
+	"CameraMode",
+	{ Text = "第三人称", Default = Players.LocalPlayer.CameraMode == Enum.CameraMode.Classic }
+)
+SelfBox:AddSlider("Fov", { Text = "视野范围", Min = 1, Max = 120, Default = 70, AllowRightClickInput = true })
 
 -- UI设置
 local Menu = Tabs["UI Settings"]:AddRightGroupbox("菜单选项", "wrench")
@@ -658,20 +666,32 @@ Toggles.FullBright:OnChanged(function(state)
 end)
 
 Options.Brightness:OnChanged(function(value)
-  if Toggles.FullBright.Value then
-    Lighting.Brightness = value
-  end
+	if Toggles.FullBright.Value then
+		Lighting.Brightness = value
+	end
 end)
 
 Toggles.Nofog:OnChanged(function(state)
-  if state then
-    Lighting.FogEnd = 100000
-    for i,v in pairs(Lighting:GetDescendants()) do
-      if v:IsA("Atmosphere") then
-        v:Destroy()
-      end
-    end
-  else
-    Library:Notify("温馨提示: 无法关闭:)")
-  end
+	if state then
+		Lighting.FogEnd = 100000
+		for i, v in pairs(Lighting:GetDescendants()) do
+			if v:IsA("Atmosphere") then
+				v:Destroy()
+			end
+		end
+	else
+		Library:Notify("温馨提示: 无法关闭:)")
+	end
+end)
+
+Toggles.CameraMode:OnChanged(function(state)
+	if state then
+		Players.LocalPlayer.CameraMode = Enum.CameraMode.Classic
+	else
+		Players.LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
+	end
+end)
+
+Options.Fov:OnChanged(function(value)
+	Workspace.CurrentCamera.FieldOfView = value
 end)
