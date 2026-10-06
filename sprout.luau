@@ -1,4 +1,4 @@
-local version = "v0.0.4"
+local version = "v0.0.5"
 local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
 local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
@@ -34,6 +34,7 @@ local Players = Services.Players
 local RunService = Services.RunService
 local ProximityPromptService = Services.ProximityPromptService
 local Lighting = Services.Lighting
+local HttpService = Services.HttpService
 local TeleportService = Services.TeleportService
 
 local ESPLibrary =
@@ -81,6 +82,33 @@ SessionTab:AddButton({
 	DoubleClick = true,
 	Func = function()
 		rejoin()
+	end,
+})
+
+local DownloadTab = Tabs.Main:AddRightGroupbox("下载", "download")
+DownloadTab:AddInput("FileURL", { Text = "文件URL", Placeholder = "https://example.com/file.txt" })
+DownloadTab:AddButton({
+	Text = "下载",
+	Func = function()
+		local fileName = getFileNameFromURL(Options.FileURL.Value)
+		local processN = Library:Notify({
+			Title = fileName,
+			Description = "下载文件中...",
+			Persist = true,
+		})
+		local success, result = pcall(function()
+			HttpService:RequestAsync({
+				Url = Options.FileURL.Value,
+				Method = "GET",
+			})
+		end)
+		if success and result.Success then
+			Library:Notify("下载成功!")
+			writefile(fileName, result.Body)
+		else
+			Library:Notify("下载失败!")
+		end
+		processN:Destroy()
 	end,
 })
 
@@ -253,6 +281,12 @@ Loading.Sidebar:AddLabel("当前版本: " .. version)
 Loading:SetDescription("加载完成!")
 task.wait(1)
 Loading:Continue()
+
+function getFileNameFromURL(url)
+	local path = url:split("?")[1]
+	local segments = path:split("/")
+	return segments[#segments]
+end
 
 function getRoot(char)
 	if char and char:FindFirstChildOfClass("Humanoid") then
