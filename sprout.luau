@@ -1,4 +1,4 @@
-local version = "v0.1.0"
+local version = "v0.1.1"
 local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
 local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
@@ -97,12 +97,11 @@ DownloadTab:AddButton({
 			Persist = true,
 		})
 		local success, result = pcall(function()
-			HttpService:RequestAsync({
+			return HttpService:RequestAsync({
 				Url = Options.FileURL.Value,
-				Method = "GET",
 			})
 		end)
-		if success and result.Success then
+		if success and result and result.Success then
 			Library:Notify("下载成功!")
 			writefile(fileName, result.Body)
 		else
