@@ -119,7 +119,7 @@ local Scripts = {
 	["Infinite Yield"] = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
 	["甩飞"] = "https://raw.githubusercontent.com/alinurb295-coder/ALINUR-FLING-SCRIPT/refs/heads/main/ALINUR-FLING.lua",
 	["Dex++"] = "https://github.com/AZYsGithub/DexPlusPlus/releases/latest/download/out.lua",
-	["飞行GUI"] = "https://raw.githubusercontent.com/execute500/scripts/refs/heads/main/飞行GUI",
+	["飞行GUI"] = "https://raw.githubusercontent.com/execute500/scripts/refs/heads/main/飞行GUI.luau",
 }
 for name, url in pairs(Scripts) do
 	OtherScripts:AddButton({
