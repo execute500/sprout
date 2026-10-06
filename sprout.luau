@@ -57,14 +57,6 @@ local Tabs = {
 }
 
 -- 主要
-Tabs.Main:UpdateWarningBox({
-	Title = "信息",
-	Text = "此脚本为自用脚本,不想用就别用",
-	IsNormal = false,
-	Visible = true,
-	LockSize = true,
-})
-
 local MainTab = Tabs.Main:AddLeftGroupbox("主要", "sliders-horizontal")
 MainTab:AddSlider("SpeedControl", { Text = "速度", Default = 16, AllowRightClickInput = true })
 MainTab:AddToggle("EnableSpeedControl", { Text = "启用速度修改" })
