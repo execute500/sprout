@@ -228,7 +228,7 @@ local TeleportCheck = false
 Players.LocalPlayer.OnTeleport:Connect(function(state)
 	if Toggles.KeepHub.Value and not TeleportCheck then
 		TeleportCheck = true
-		queueteleport(
+		queue_on_teleport(
 			"loadstring(game:HttpGet('https://raw.githubusercontent.com/execute500/sprout/refs/heads/main/sprout.luau')()"
 		)
 	end
