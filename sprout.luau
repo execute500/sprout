@@ -1,4 +1,4 @@
-local version = "v0.0.3"
+local version = "v0.0.4"
 local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
 local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
@@ -34,6 +34,7 @@ local Players = Services.Players
 local RunService = Services.RunService
 local ProximityPromptService = Services.ProximityPromptService
 local Lighting = Services.Lighting
+local TeleportService = Services.TeleportService
 
 local ESPLibrary =
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/TheHunterSolo1/Scripts/main/ESPLibrary"))()
@@ -67,7 +68,23 @@ MainTab:AddToggle("EnableFly", { Text = "飞行" })
 MainTab:AddToggle("EnableNoclip", { Text = "穿墙" })
 MainTab:AddToggle("instantproximityprompts", { Text = "瞬间交互" })
 
-local OtherScripts = Tabs.Main:AddRightGroupbox("其他脚本", "navigation")
+local SessionTab = Tabs.Main:AddRightGroupbox("会话")
+SessionTab:AddButton({
+	Text = "重置角色",
+	DoubleClick = true,
+	Func = function()
+		reset()
+	end,
+})
+SessionTab:AddButton({
+	Text = "重新加入",
+	DoubleClick = true,
+	Func = function()
+		rejoin()
+	end,
+})
+
+local OtherScripts = Tabs.Main:AddRightGroupbox("其他脚本", "ellipsis")
 local Scripts = {
 	["甩飞"] = "https://raw.githubusercontent.com/alinurb295-coder/ALINUR-FLING-SCRIPT/refs/heads/main/ALINUR-FLING.lua",
 	["Dex++"] = "https://github.com/AZYsGithub/DexPlusPlus/releases/latest/download/out.lua",
@@ -252,6 +269,25 @@ function randomString()
 		array[i] = string.char(math.random(32, 126))
 	end
 	return table.concat(array)
+end
+
+function reset()
+	local humanoid = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+	if humanoid then
+		humanoid:ChangeState(Enum.HumanoidStateType.Dead)
+	else
+		Players.LocalPlayer.Character:BreakJoints()
+	end
+end
+
+function rejoin()
+	if #Players:GetPlayers() <= 1 then
+		Players.LocalPlayer:Kick("\n重新加入中...")
+		wait()
+		TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
+	else
+		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
+	end
 end
 
 function ESP(plr)
