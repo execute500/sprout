@@ -1,4 +1,4 @@
-local version = "v0.0.5"
+local version = "v0.1.0"
 local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
 local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
@@ -143,8 +143,7 @@ ESPBox:AddToggle("PlayerESP", { Text = "玩家ESP" })
 ESPBox:AddDivider()
 local CustomESPs = {}
 ESPBox:AddInput("CustomESP", { Text = "自定义ESP", Placeholder = "部件位置" })
-ESPBox:AddLabel("默认颜色")
-	:AddColorPicker("DefaultCustomESPColorPicker", { Default = Color3.new(0.295, 0.593, 0.295) })
+ESPBox:AddLabel("默认颜色"):AddColorPicker("DefaultCustomESPColorPicker", { Default = Color3.new(1, 1, 1) })
 ESPBox:AddButton("确定", function()
 	local func, err = loadstring("return " .. Options.CustomESP.Value)
 	if func == nil then
@@ -173,15 +172,16 @@ ESPBox:AddDropdown("CustomESPs", {
 	Text = "当前自定义ESP",
 	Multi = true,
 })
-ESPBox:AddInput("CustomESPName", { Text = "ESP名称" })
+ESPBox:AddInput("CustomESPName", { Text = "ESP名称", ClearTextOnFocus = false })
 ESPBox:AddLabel("ESP颜色"):AddColorPicker("CustomESPColorPicker")
 ESPBox:AddButton("重命名", function()
-	for _, Table in pairs(Options.CustomESPs.Values) do
+	for _, data in pairs(Options.CustomESPs.Values) do
 		local newName = Options.CustomESPName.Value
-		Library:Notify("成功重命名 " .. Table.Name .. " 为 " .. newName, 2)
-		Table.Object.Name = newName
-		Table.Name = newName
+		Library:Notify("成功重命名 " .. data.Name .. " -> " .. newName, 2)
+		data.Name = newName
+		ESPLibrary:UpdateESP(data.Object, newName, data.Color)
 	end
+	Options.CustomESPs:SetValues(CustomESPs)
 end):AddButton("删除ESP", function()
 	for _, Table in pairs(Options.CustomESPs.Values) do
 		RemoveCustomESP(Table.Object)
@@ -591,6 +591,7 @@ end)
 Options.CustomESPs:OnChanged(function()
 	local values = Options.CustomESPs:GetActiveValues()
 	if #values == 1 then
+		Options.CustomESPName:SetValue(values[1].Name)
 		Options.CustomESPColorPicker:SetValueRGB(values[1].Color)
 	end
 end)
