@@ -1,4 +1,4 @@
-local version = "v0.0.1"
+local version = "v0.0.2"
 local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
 local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
@@ -167,6 +167,7 @@ ESPBoxSettings:AddDropdown(
 local LightBox = Tabs.Vision:AddRightGroupbox("环境")
 LightBox:AddSlider("Brightness", { Text = "亮度", Max = 10, Default = 2 })
 LightBox:AddToggle("FullBright", { Text = "全亮" })
+LightBox:AddToggle("Nofog", { Text = "无雾" })
 
 -- UI设置
 local Menu = Tabs["UI Settings"]:AddRightGroupbox("菜单选项", "wrench")
@@ -659,5 +660,18 @@ end)
 Options.Brightness:OnChanged(function(value)
   if Toggles.FullBright.Value then
     Lighting.Brightness = value
+  end
+end)
+
+Toggles.Nofog:OnChanged(function(state)
+  if state then
+    Lighting.FogEnd = 100000
+    for i,v in pairs(Lighting:GetDescendants()) do
+      if v:IsA("Atmosphere") then
+        v:Destroy()
+      end
+    end
+  else
+    Library:Notify("温馨提示: 无法关闭:)")
   end
 end)
