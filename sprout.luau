@@ -1,4 +1,4 @@
-local version = "v0.1.1"
+local version = "v0.1.2"
 local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
 local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
 local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
@@ -36,6 +36,8 @@ local ProximityPromptService = Services.ProximityPromptService
 local Lighting = Services.Lighting
 local HttpService = Services.HttpService
 local TeleportService = Services.TeleportService
+local TextChatService = Services.TextChatService
+local ReplicatedStorage = Services.ReplicatedStorage
 
 local ESPLibrary =
 	loadstring(game:HttpGet("https://raw.githubusercontent.com/TheHunterSolo1/Scripts/main/ESPLibrary"))()
@@ -54,6 +56,7 @@ local Window = Library:CreateWindow({
 
 local Tabs = {
 	Main = Window:AddTab("主要", "user"),
+	Games = Window:AddTab("游戏", "gamepad-2"),
 	Vision = Window:AddTab("视觉", "eye"),
 	["UI Settings"] = Window:AddTab("UI设置", "settings"),
 }
@@ -134,6 +137,18 @@ for name, url in pairs(Scripts) do
 	})
 end
 
+-- 游戏
+local DoorsBox = Tabs.Games:AddLeftGroupbox("Doors")
+DoorsBox:AddToggle("MonsterNotify", { Text = "实体通知" })
+DoorsBox:AddToggle("MonsterChat", { Text = "聊天通知" })
+local BeSCPBox = Tabs.Games:AddRightGroupbox("成为SCP或守卫")
+BeSCPBox:AddToggle("SCPESP", { Text = "SCP ESP" })
+BeSCPBox:AddToggle("MTFESP", { Text = "MTF ESP" })
+BeSCPBox:AddToggle("GuardESP", { Text = "守卫ESP" })
+BeSCPBox:AddDivider()
+BeSCPBox:AddToggle("Auto035", { Text = "自动035" })
+BeSCPBox:AddToggle("AutoClothes", { Text = "自动穿衣😀" })
+
 -- 视觉
 local ESPTabbox = Tabs.Vision:AddLeftTabbox("ESP")
 local ESPBox = ESPTabbox:AddTab("ESP")
@@ -202,6 +217,7 @@ ESPBoxSettings:AddDropdown(
 	"ESPMode",
 	{ Text = "ESP模式", Values = { "Highlight/Text", "Highlight", "Text" }, Default = "Highlight/Text" }
 )
+
 local LightBox = Tabs.Vision:AddRightGroupbox("环境")
 LightBox:AddSlider("Brightness", { Text = "亮度", Max = 10, Default = 2 })
 LightBox:AddToggle("FullBright", { Text = "全亮" })
@@ -321,6 +337,15 @@ function rejoin()
 		TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
 	else
 		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
+	end
+end
+
+function chatMessage(str)
+	str = tostring(str)
+	if not TextChatService.ChatVersion == Enum.ChatVersion.LegacyChatService then
+		TextChatService.TextChannels.RBXGeneral:SendAsync(str)
+	else
+		ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(str, "All")
 	end
 end
 
@@ -757,4 +782,61 @@ end)
 
 Options.Fov:OnChanged(function(value)
 	Workspace.CurrentCamera.FieldOfView = value
+end)
+
+local objAdded
+Toggles.MonsterNotify:OnChanged(function(state)
+	if state then
+		objAdded = Workspace.ChildAdded:Connect(function(obj)
+			if obj.Name == "RushMoving" then
+				Library:Notify("Rush 生成!")
+				if Toggles.MonsterChat.Value then
+					chatMessage("Rush 生成!")
+				end
+			end
+		end)
+	else
+		objAdded:Disconnect()
+		objAdded = nil
+	end
+end)
+
+local scpRemovedSignal
+local scpNotify
+Toggles.Auto035:OnChanged(function(state)
+	if state then
+		if Workspace:FindFirstChild("SCP-035") then
+			scpNotify = Library:Notify({
+				Title = "警告",
+				Description = "SCP-035存在,等待消灭SCP-035中...",
+				Persist = true,
+			})
+		else
+			fireclickdetector(Workspace.Facility.Special["SCP-035"].ClickDetector)
+		end
+		scpRemovedSignal = Workspace.ChildRemoved:Connect(function(child)
+			if child.Name == "SCP-035" then
+				if scpNotify then
+					scpNotify:Destroy()
+				end
+				fireclickdetector(Workspace.Facility.Special["SCP-035"].ClickDetector)
+			end
+		end)
+	else
+		scpRemovedSignal:Disconnect()
+		scpRemovedSignal = nil
+	end
+end)
+
+local scpchrAdded
+Toggles.AutoClothes:OnChanged(function(state)
+	if state then
+		fireclickdetector(Workspace.Facility.Special["Clothes Giver"].ClickPart.ClickDetector)
+		scpchrAdded = Players.LocalPlayer.CharacterAdded:Connect(function()
+			fireclickdetector(Workspace.Facility.Special["Clothes Giver"].ClickPart.ClickDetector)
+		end)
+	else
+		scpchrAdded:Disconnect()
+		scpchrAdded = nil
+	end
 end)
