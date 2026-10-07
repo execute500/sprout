@@ -1,20 +1,5 @@
-local version = "v0.1.2"
-local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
-local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
-local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
-local ThemeManager = loadstring(game:HttpGet(librepo .. "addons/ThemeManager.lua"))()
-local Toggles = Library.Toggles
-local Options = Library.Options
+-- 参照文档: https://docs.sunc.su
 
--- 初始化
-local Loading = Library:CreateLoading({
-	Title = "Sprout",
-	Icon = 95816097006870,
-	TotalSteps = 3,
-})
-
-Loading:SetMessage("初始化中...")
-Loading:SetDescription("加载库中...")
 Services = setmetatable({}, {
 	__index = function(self, name)
 		local success, cache = pcall(function()
@@ -29,294 +14,25 @@ Services = setmetatable({}, {
 	end,
 })
 
+local version = "v0.1.3"
+local repo = "https://raw.githubusercontent.com/execute500/sprout/refs/heads/main/"
+local librepo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(librepo .. "Library.lua"))()
+local SaveManager = loadstring(game:HttpGet(librepo .. "addons/SaveManager.lua"))()
+local ThemeManager = loadstring(game:HttpGet(librepo .. "addons/ThemeManager.lua"))()
+local ESPLibrary =
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/TheHunterSolo1/Scripts/main/ESPLibrary"))()
+ESPLibrary:SetFadeTime(0)
+ESPLibrary:SetTracers(false)
+local Toggles = Library.Toggles
+local Options = Library.Options
 local Workspace = Services.Workspace
 local Players = Services.Players
 local RunService = Services.RunService
 local ProximityPromptService = Services.ProximityPromptService
 local Lighting = Services.Lighting
-local HttpService = Services.HttpService
 local TeleportService = Services.TeleportService
 local TextChatService = Services.TextChatService
-local ReplicatedStorage = Services.ReplicatedStorage
-
-local ESPLibrary =
-	loadstring(game:HttpGet("https://raw.githubusercontent.com/TheHunterSolo1/Scripts/main/ESPLibrary"))()
-ESPLibrary:SetFadeTime(0)
-ESPLibrary:SetTracers(false)
-
-Loading:SetCurrentStep(1)
-Loading:SetDescription("创建页面中...")
-
-local Window = Library:CreateWindow({
-	Title = "Sprout",
-	Footer = "当前版本: " .. version,
-	Icon = 95816097006870,
-	NotifySide = "Right",
-})
-
-local Tabs = {
-	Main = Window:AddTab("主要", "user"),
-	Games = Window:AddTab("游戏", "gamepad-2"),
-	Vision = Window:AddTab("视觉", "eye"),
-	["UI Settings"] = Window:AddTab("UI设置", "settings"),
-}
-
--- 主要
-local MainTab = Tabs.Main:AddLeftGroupbox("主要", "sliders-horizontal")
-MainTab:AddSlider("SpeedControl", { Text = "速度", Default = 16, AllowRightClickInput = true })
-MainTab:AddToggle("EnableSpeedControl", { Text = "启用速度修改" })
-MainTab:AddSlider("JumpPower", { Text = "跳跃高度", Max = 300, Default = 50, AllowRightClickInput = true })
-MainTab:AddToggle("EnableJumpPower", { Text = "启用跳跃高度修改" })
-MainTab:AddSlider("FlySpeed", { Text = "飞行速度", Max = 10, Default = 1, AllowRightClickInput = true })
-MainTab:AddToggle("EnableFly", { Text = "飞行" })
-MainTab:AddToggle("EnableNoclip", { Text = "穿墙" })
-MainTab:AddToggle("instantproximityprompts", { Text = "瞬间交互" })
-
-local SessionTab = Tabs.Main:AddRightGroupbox("会话")
-SessionTab:AddButton({
-	Text = "重置角色",
-	DoubleClick = true,
-	Func = function()
-		reset()
-	end,
-})
-SessionTab:AddButton({
-	Text = "重新加入",
-	DoubleClick = true,
-	Func = function()
-		rejoin()
-	end,
-})
-
-local DownloadTab = Tabs.Main:AddRightGroupbox("下载", "download")
-DownloadTab:AddInput("FileURL", { Text = "文件URL", Placeholder = "https://example.com/file.txt" })
-DownloadTab:AddButton({
-	Text = "下载",
-	Func = function()
-		local fileName = getFileNameFromURL(Options.FileURL.Value)
-		local processN = Library:Notify({
-			Title = fileName,
-			Description = "下载文件中...",
-			Persist = true,
-		})
-		local success, result = pcall(function()
-			return HttpService:RequestAsync({
-				Url = Options.FileURL.Value,
-			})
-		end)
-		if success and result and result.Success then
-			Library:Notify("下载成功!")
-			writefile(fileName, result.Body)
-		else
-			Library:Notify("下载失败!")
-		end
-		processN:Destroy()
-	end,
-})
-
-local OtherScripts = Tabs.Main:AddRightGroupbox("其他脚本", "ellipsis")
-local Scripts = {
-	["Infinite Yield"] = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
-	["甩飞"] = "https://raw.githubusercontent.com/alinurb295-coder/ALINUR-FLING-SCRIPT/refs/heads/main/ALINUR-FLING.lua",
-	["Dex++"] = "https://github.com/AZYsGithub/DexPlusPlus/releases/latest/download/out.lua",
-	["飞行GUI"] = "https://raw.githubusercontent.com/execute500/scripts/refs/heads/main/飞行GUI.luau",
-}
-for name, url in pairs(Scripts) do
-	OtherScripts:AddButton({
-		Text = name,
-		DoubleClick = true,
-		Func = function()
-			local func, err = loadstring(game:HttpGet(url))
-			if func == nil then
-				warn("获取脚本失败: " .. err)
-				Library:Notify("[" .. name .. "] 获取脚本失败!")
-				return
-			end
-			func()
-		end,
-	})
-end
-
--- 游戏
-local DoorsBox = Tabs.Games:AddLeftGroupbox("Doors")
-DoorsBox.PlaceId = 6839171747
-DoorsBox:AddToggle("MonsterNotify", { Text = "实体通知" })
-DoorsBox:AddToggle("MonsterChat", { Text = "聊天通知" })
-local BeSCPBox = Tabs.Games:AddRightGroupbox("成为SCP或守卫")
-BeSCPBox.PlaceId = 121461214257813
-BeSCPBox:AddToggle("SCPESP", { Text = "SCP ESP" })
-BeSCPBox:AddToggle("MTFESP", { Text = "MTF ESP" })
-BeSCPBox:AddToggle("GuardESP", { Text = "守卫ESP" })
-BeSCPBox:AddDivider()
-BeSCPBox:AddButton("拒绝空气墙", function()
-	for _, child in pairs(Workspace.Facility.Special:GetChildren()) do
-		if child.Name == "GuardSpawnBarrier" or child.Name == "MtfSpawnBarrier" then
-			child:Destroy()
-		end
-	end
-	Library:Notify("删除成功!")
-end)
-BeSCPBox:AddToggle("Auto035", { Text = "自动035" })
-BeSCPBox:AddToggle("AutoClothes", { Text = "自动穿衣😀" })
-
-for _, gamebox in pairs(Tabs.Games.Groupboxes) do
-	if gamebox.PlaceId ~= game.PlaceId then
-		for _, element in pairs(gamebox.Elements) do
-			if element.SetDisabled then
-				element:SetDisabled(true)
-			end
-		end
-	end
-end
-
--- 视觉
-local ESPTabbox = Tabs.Vision:AddLeftTabbox("ESP")
-local ESPBox = ESPTabbox:AddTab("ESP")
-ESPBox:AddToggle("PlayerESP", { Text = "玩家ESP" })
-	:AddColorPicker("PlayerESPColorPicker", { Default = Color3.new(1, 1, 1) })
-ESPBox:AddDivider()
-local CustomESPs = {}
-ESPBox:AddInput("CustomESP", { Text = "自定义ESP", Placeholder = "部件位置" })
-ESPBox:AddLabel("默认颜色"):AddColorPicker("DefaultCustomESPColorPicker", { Default = Color3.new(1, 1, 1) })
-ESPBox:AddButton("确定", function()
-	local func, err = loadstring("return " .. Options.CustomESP.Value)
-	if func == nil then
-		warn("获取部件失败: " .. err)
-		Library:Notify("获取部件失败!")
-		return
-	end
-	local success, result = pcall(func)
-	if not success then
-		warn("获取部件失败: " .. result)
-		Library:Notify("获取部件失败!")
-		return
-	end
-	if result == nil then
-		Library:Notify("未知部件!")
-		return
-	end
-	if CustomESPs[result] then
-		Library:Notify("已存在该部件!")
-		return
-	end
-	CustomESP(result)
-end)
-ESPBox:AddDivider()
-ESPBox:AddDropdown("CustomESPs", {
-	Text = "当前自定义ESP",
-	Multi = true,
-})
-ESPBox:AddInput("CustomESPName", { Text = "ESP名称", ClearTextOnFocus = false })
-ESPBox:AddLabel("ESP颜色"):AddColorPicker("CustomESPColorPicker")
-ESPBox:AddButton("重命名", function()
-	for _, data in pairs(Options.CustomESPs.Values) do
-		local newName = Options.CustomESPName.Value
-		Library:Notify("成功重命名 " .. data.Name .. " -> " .. newName, 2)
-		data.Name = newName
-		ESPLibrary:UpdateESP(data.Object, newName, data.Color)
-	end
-	Options.CustomESPs:SetValues(CustomESPs)
-end):AddButton("删除ESP", function()
-	for _, Table in pairs(Options.CustomESPs.Values) do
-		RemoveCustomESP(Table.Object)
-		Library:Notify("成功删除 " .. Table.Name .. " ESP", 2)
-	end
-end)
-
-local ESPBoxSettings = ESPTabbox:AddTab("设置")
-ESPBoxSettings:AddToggle("RainbowESP", { Text = "彩色ESP", DisabledTooltip = "与 玩家队伍颜色 不兼容!" })
-ESPBoxSettings:AddToggle(
-	"EnableTeamColor",
-	{ Text = "玩家队伍颜色", DisabledTooltip = "与 彩色ESP 不兼容!" }
-)
-ESPBoxSettings:AddSlider("ESPTransitingTime", { Text = "过渡时间", Max = 4, Default = 0 })
-ESPBoxSettings:AddToggle("ESPArrows", { Text = "启用箭头" })
-ESPBoxSettings:AddToggle("ESPTracers", { Text = "启用射线" })
-ESPBoxSettings:AddToggle("ESPShowDistance", { Text = "显示距离", Default = true })
-ESPBoxSettings:AddDropdown(
-	"ESPMode",
-	{ Text = "ESP模式", Values = { "Highlight/Text", "Highlight", "Text" }, Default = "Highlight/Text" }
-)
-
-local LightBox = Tabs.Vision:AddRightGroupbox("环境")
-LightBox:AddSlider("Brightness", { Text = "亮度", Max = 10, Default = 2 })
-LightBox:AddToggle("FullBright", { Text = "全亮" })
-LightBox:AddToggle("Nofog", { Text = "无雾" })
-
-local SelfBox = Tabs.Vision:AddRightGroupbox("自身")
-SelfBox:AddToggle(
-	"CameraMode",
-	{ Text = "第三人称", Default = Players.LocalPlayer.CameraMode == Enum.CameraMode.Classic }
-)
-SelfBox:AddSlider("Fov", { Text = "视野范围", Min = 1, Max = 120, Default = 70, AllowRightClickInput = true })
-
--- UI设置
-local Menu = Tabs["UI Settings"]:AddRightGroupbox("菜单选项", "wrench")
-Menu:AddToggle("KeybindMenu", {
-	Text = "打开快捷键菜单",
-	Callback = function(enabled)
-		Library.KeybindFrame.Visible = enabled
-	end,
-})
-Menu:AddToggle("KeepHub", { Text = "在传送中执行" })
-local TeleportCheck = false
-Players.LocalPlayer.OnTeleport:Connect(function(state)
-	if Toggles.KeepHub.Value and not TeleportCheck then
-		TeleportCheck = true
-		queue_on_teleport(
-			"loadstring(game:HttpGet('https://raw.githubusercontent.com/execute500/sprout/refs/heads/main/sprout.luau')()"
-		)
-	end
-end)
-Menu:AddToggle("ForceCheckbox", {
-	Text = "强制复选框",
-	Callback = function(enabled)
-		Library.ForceCheckbox = enabled
-	end,
-})
-Menu:AddDropdown("NotificationSide", {
-	Text = "通知方向",
-	Values = { "Left", "Right" },
-	Default = "Right",
-	Callback = function(side)
-		Library:SetNotifySide(side)
-	end,
-})
-Menu:AddDropdown("DPIScale", {
-	Text = "DPI缩放",
-	Values = { "75%", "100%", "125%", "150%" },
-	Default = "100%",
-	Callback = function(scale)
-		Library:SetDPIScale(tonumber(scale:sub(1, -2)))
-	end,
-})
-Menu:AddDivider()
-Menu:AddButton("卸载菜单", function()
-	ESPLibrary:Unload()
-	Library:Unload()
-end)
-
-Loading:SetCurrentStep(2)
-Loading:SetDescription("加载配置中...")
--- SaveManager
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetLibrary(Library)
-SaveManager:SetFolder("sprout")
-SaveManager:BuildConfigSection(Tabs["UI Settings"])
-SaveManager:LoadAutoloadConfig()
--- ThemeManager
-ThemeManager:SetLibrary(Library)
-ThemeManager:SetFolder("sprout")
-ThemeManager:ApplyToTab(Tabs["UI Settings"])
-ThemeManager:LoadDefault()
-
-Loading:SetCurrentStep(3)
-Loading:ShowSidebarPage(true)
-Loading.Sidebar:AddLabel("用户: " .. Players.LocalPlayer.Name)
-Loading.Sidebar:AddLabel("当前版本: " .. version)
-Loading:SetDescription("加载完成!")
-task.wait(1)
-Loading:Continue()
 
 function getFileNameFromURL(url)
 	local path = url:split("?")[1]
@@ -341,6 +57,20 @@ function randomString()
 	return table.concat(array)
 end
 
+function getCustomAsset(name, url)
+	if not isfolder("sprout/assets") then
+		makefolder("sprout/assets")
+	end
+	local result = request({ Url = url })
+	if result.Success then
+		writefile("sprout/assets/" .. tostring(name), result.Body)
+	end
+	if isfile("sprout/assets/" .. tostring(name)) then
+		return getcustomasset("sprout/assets/" .. tostring(name))
+	end
+	return
+end
+
 function reset()
 	local humanoid = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
 	if humanoid then
@@ -353,7 +83,7 @@ end
 function rejoin()
 	if #Players:GetPlayers() <= 1 then
 		Players.LocalPlayer:Kick("\n重新加入中...")
-		wait()
+		task.wait()
 		TeleportService:Teleport(game.PlaceId, Players.LocalPlayer)
 	else
 		TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, Players.LocalPlayer)
@@ -361,12 +91,7 @@ function rejoin()
 end
 
 function chatMessage(str)
-	str = tostring(str)
-	if not TextChatService.ChatVersion == Enum.ChatVersion.LegacyChatService then
-		TextChatService.TextChannels.RBXGeneral:SendAsync(str)
-	else
-		ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(str, "All")
-	end
+	TextChatService.TextChannels.RBXGeneral:SendAsync(tostring(str))
 end
 
 function ESP(plr)
@@ -392,7 +117,7 @@ function ESP(plr)
 
 	local addedFunc
 	local teamChange
-	addedFunc = plr.CharacterAdded:Connect(function()
+	addedFunc = Library:GiveSignal(plr.CharacterAdded:Connect(function()
 		if not Toggles.PlayerESP.Value then
 			addedFunc:Disconnect()
 			return
@@ -402,8 +127,8 @@ function ESP(plr)
 			Text = plr.Name,
 			Color = color,
 		})
-	end)
-	teamChange = plr:GetPropertyChangedSignal("TeamColor"):Connect(function()
+	end))
+	teamChange = Library:GiveSignal(plr:GetPropertyChangedSignal("TeamColor"):Connect(function()
 		if not Toggles.PlayerESP.Value then
 			teamChange:Disconnect()
 			return
@@ -411,8 +136,8 @@ function ESP(plr)
 		if not Toggles.EnableTeamColor.Value then
 			return
 		end
-		ESPLibrary:UpdateESP(plr.Character, plr.Name, plr.TeamColor)
-	end)
+		ESPLibrary:UpdateESP(plr.Character, plr.Name, plr.TeamColor.Color)
+	end))
 end
 
 local velocityHandlerName = randomString()
@@ -509,12 +234,268 @@ function unfly()
 	end)
 end
 
+-- 初始化
+local Assets = {
+	logo = repo .. "assets/logo.png",
+}
+for name, url in pairs(Assets) do
+	Assets[name] = getCustomAsset("sprout_" .. name, url)
+end
+
+local Loading = Library:CreateLoading({
+	Title = "Sprout",
+	Icon = Assets.logo,
+	TotalSteps = 2,
+})
+
+Loading:SetMessage("初始化中...")
+Loading:SetDescription("创建页面中...")
+
+local Window = Library:CreateWindow({
+	Title = "Sprout",
+	Footer = "当前版本: " .. version,
+	Icon = Assets.logo,
+	NotifySide = "Right",
+})
+
+local Tabs = {
+	Main = Window:AddTab("主要", "user"),
+	Games = Window:AddTab("游戏", "gamepad-2"),
+	Vision = Window:AddTab("视觉", "eye"),
+	["UI Settings"] = Window:AddTab("UI设置", "settings"),
+}
+
+-- 主要
+local MainTab = Tabs.Main:AddLeftGroupbox("主要", "sliders-horizontal")
+MainTab:AddSlider("SpeedControl", { Text = "速度", Default = 16, AllowRightClickInput = true })
+MainTab:AddToggle("EnableSpeedControl", { Text = "启用速度修改" })
+MainTab:AddSlider("JumpPower", { Text = "跳跃高度", Max = 300, Default = 50, AllowRightClickInput = true })
+MainTab:AddToggle("EnableJumpPower", { Text = "启用跳跃高度修改" })
+MainTab:AddSlider("FlySpeed", { Text = "飞行速度", Max = 10, Default = 1, AllowRightClickInput = true })
+MainTab:AddToggle("EnableFly", { Text = "飞行" })
+MainTab:AddToggle("EnableNoclip", { Text = "穿墙" })
+MainTab:AddToggle("instantproximityprompts", { Text = "瞬间交互" })
+
+local SessionTab = Tabs.Main:AddRightGroupbox("会话")
+SessionTab:AddButton({ Text = "重置角色", DoubleClick = true, Func = reset })
+SessionTab:AddButton({ Text = "重新加入", DoubleClick = true, Func = rejoin })
+
+local DownloadTab = Tabs.Main:AddRightGroupbox("下载", "download")
+DownloadTab:AddInput("FileURL", { Text = "文件URL", Placeholder = "https://example.com/file.txt" })
+DownloadTab:AddButton({
+	Text = "下载",
+	Func = function()
+		local fileName = getFileNameFromURL(Options.FileURL.Value)
+		local processN = Library:Notify({
+			Title = fileName,
+			Description = "下载文件中...",
+			Persist = true,
+		})
+		local result = request({ Url = Options.FileURL.Value })
+		if result and result.Success then
+			Library:Notify("下载成功!")
+			writefile(fileName, result.Body)
+		else
+			Library:Notify("下载失败!")
+			warn(
+				string.format(
+					"[%s %s] 文件 %s 下载失败",
+					tostring(result.StatusCode),
+					result.StatusMessage,
+					fileName
+				)
+			)
+		end
+		processN:Destroy()
+	end,
+})
+
+local OtherScripts = Tabs.Main:AddRightGroupbox("其他脚本", "ellipsis")
+local Scripts = {
+	["Infinite Yield"] = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source",
+	["甩飞"] = "https://raw.githubusercontent.com/alinurb295-coder/ALINUR-FLING-SCRIPT/refs/heads/main/ALINUR-FLING.lua",
+	["Dex++"] = "https://github.com/AZYsGithub/DexPlusPlus/releases/latest/download/out.lua",
+	["飞行GUI"] = "https://raw.githubusercontent.com/execute500/scripts/refs/heads/main/飞行GUI.luau",
+}
+for name, url in pairs(Scripts) do
+	OtherScripts:AddButton({
+		Text = name,
+		DoubleClick = true,
+		Func = function()
+			local func, err = loadstring(game:HttpGet(url))
+			if func == nil then
+				warn("获取脚本失败: " .. err)
+				Library:Notify("[" .. name .. "] 获取脚本失败!")
+				return
+			end
+			func()
+		end,
+	})
+end
+
+-- 游戏
+local DoorsBox = Tabs.Games:AddLeftGroupbox("Doors")
+DoorsBox.PlaceId = 6839171747
+DoorsBox:AddToggle("MonsterNotify", { Text = "实体通知" })
+DoorsBox:AddToggle("MonsterChat", { Text = "聊天通知" })
+local BeSCPBox = Tabs.Games:AddRightGroupbox("成为SCP或守卫")
+BeSCPBox.PlaceId = 121461214257813
+BeSCPBox:AddToggle("SCPESP", { Text = "SCP ESP" })
+BeSCPBox:AddToggle("MTFESP", { Text = "MTF ESP" })
+BeSCPBox:AddToggle("GuardESP", { Text = "守卫ESP" })
+BeSCPBox:AddDivider()
+BeSCPBox:AddButton("拒绝空气墙", function()
+	for _, child in pairs(Workspace.Facility.Special:GetChildren()) do
+		if child.Name == "GuardSpawnBarrier" or child.Name == "MtfSpawnBarrier" then
+			child:Destroy()
+		end
+	end
+	Library:Notify("删除成功!")
+end)
+BeSCPBox:AddToggle("Auto035", { Text = "自动035" })
+BeSCPBox:AddToggle("AutoClothes", { Text = "自动穿衣😀" })
+
+for _, gamebox in pairs(Tabs.Games.Groupboxes) do
+	if gamebox.PlaceId ~= game.PlaceId then
+		for _, element in pairs(gamebox.Elements) do
+			if element.SetDisabled then
+				element:SetDisabled(true)
+			end
+		end
+	end
+end
+
+-- 视觉
+local ESPTabbox = Tabs.Vision:AddLeftTabbox("ESP")
+local ESPBox = ESPTabbox:AddTab("ESP")
+ESPBox:AddToggle("PlayerESP", { Text = "玩家ESP" })
+	:AddColorPicker("PlayerESPColorPicker", { Default = Color3.new(1, 1, 1) })
+ESPBox:AddDivider()
+local CustomESPs = {}
+ESPBox:AddInput("CustomESP", { Text = "自定义ESP", Placeholder = "部件位置" })
+ESPBox:AddLabel("默认颜色"):AddColorPicker("DefaultCustomESPColorPicker", { Default = Color3.new(1, 1, 1) })
+ESPBox:AddButton("确定", function()
+	local func, err = loadstring("return " .. Options.CustomESP.Value)
+	if func == nil then
+		warn("获取部件失败: " .. err)
+		Library:Notify("获取部件失败!")
+		return
+	end
+	local success, result = pcall(func)
+	if not success then
+		warn("获取部件失败: " .. result)
+		Library:Notify("获取部件失败!")
+		return
+	end
+	if result == nil then
+		Library:Notify("未知部件!")
+		return
+	end
+	if CustomESPs[result] then
+		Library:Notify("已存在该部件!")
+		return
+	end
+	CustomESP(result)
+end)
+ESPBox:AddDivider()
+ESPBox:AddDropdown("CustomESPs", { Text = "当前自定义ESP", Multi = true })
+ESPBox:AddInput("CustomESPName", { Text = "ESP名称", ClearTextOnFocus = false })
+ESPBox:AddLabel("ESP颜色"):AddColorPicker("CustomESPColorPicker")
+ESPBox:AddButton("重命名", function()
+	for _, data in pairs(Options.CustomESPs.Values) do
+		local newName = Options.CustomESPName.Value
+		Library:Notify("成功重命名为 " .. newName, 2)
+		data.Name = newName
+		ESPLibrary:UpdateESP(data.Object, newName, data.Color)
+	end
+	Options.CustomESPs:SetValues(CustomESPs)
+end):AddButton("删除ESP", function()
+	for _, Table in pairs(Options.CustomESPs.Values) do
+		RemoveCustomESP(Table.Object)
+		Library:Notify("成功删除 " .. Table.Name .. " ESP", 2)
+	end
+end)
+
+local ESPBoxSettings = ESPTabbox:AddTab("设置")
+ESPBoxSettings:AddToggle("RainbowESP", { Text = "彩色ESP", DisabledTooltip = "与 玩家队伍颜色 不兼容!" })
+ESPBoxSettings:AddToggle(
+	"EnableTeamColor",
+	{ Text = "玩家队伍颜色", DisabledTooltip = "与 彩色ESP 不兼容!" }
+)
+ESPBoxSettings:AddSlider("ESPTransitingTime", { Text = "过渡时间", Max = 4, Default = 0 })
+ESPBoxSettings:AddToggle("ESPArrows", { Text = "启用箭头" })
+ESPBoxSettings:AddToggle("ESPTracers", { Text = "启用射线" })
+ESPBoxSettings:AddToggle("ESPShowDistance", { Text = "显示距离", Default = true })
+ESPBoxSettings:AddDropdown(
+	"ESPMode",
+	{ Text = "ESP模式", Values = { "Highlight/Text", "Highlight", "Text" }, Default = "Highlight/Text" }
+)
+
+local LightBox = Tabs.Vision:AddRightGroupbox("环境")
+LightBox:AddSlider("Brightness", { Text = "亮度", Max = 10, Default = 2 })
+LightBox:AddToggle("FullBright", { Text = "全亮" })
+LightBox:AddToggle("Nofog", { Text = "无雾" })
+
+local SelfBox = Tabs.Vision:AddRightGroupbox("自身")
+SelfBox:AddToggle(
+	"CameraMode",
+	{ Text = "第三人称", Default = Players.LocalPlayer.CameraMode == Enum.CameraMode.Classic }
+)
+SelfBox:AddSlider("Fov", { Text = "视野范围", Min = 1, Max = 120, Default = 70, AllowRightClickInput = true })
+
+-- UI设置
+local Menu = Tabs["UI Settings"]:AddRightGroupbox("菜单选项", "wrench")
+Menu:AddToggle("KeybindMenu", {
+	Text = "打开快捷键菜单",
+	Callback = function(enabled)
+		Library.KeybindFrame.Visible = enabled
+	end,
+})
+Menu:AddToggle("KeepHub", { Text = "在传送中执行" })
+local TeleportCheck = false
+Players.LocalPlayer.OnTeleport:Connect(function(state)
+	if Toggles.KeepHub.Value and not TeleportCheck then
+		TeleportCheck = true
+		queue_on_teleport(
+			"loadstring(game:HttpGet('https://raw.githubusercontent.com/execute500/sprout/refs/heads/main/sprout.luau'))()"
+		)
+	end
+end)
+Menu:AddToggle("ForceCheckbox", {
+	Text = "强制复选框",
+	Callback = function(enabled)
+		Library.ForceCheckbox = enabled
+	end,
+})
+Menu:AddDropdown("NotificationSide", {
+	Text = "通知方向",
+	Values = { "Left", "Right" },
+	Default = "Right",
+	Callback = function(side)
+		Library:SetNotifySide(side)
+	end,
+})
+Menu:AddDropdown("DPIScale", {
+	Text = "DPI缩放",
+	Values = { "75%", "100%", "125%", "150%" },
+	Default = "100%",
+	Callback = function(scale)
+		Library:SetDPIScale(tonumber(scale:sub(1, -2)))
+	end,
+})
+Menu:AddDivider()
+Menu:AddButton("卸载菜单", function()
+	ESPLibrary:Unload()
+	Library:Unload()
+end)
+
+-- 添加功能
 local playerAdded
 Toggles.PlayerESP:OnChanged(function(state)
 	if state then
-		playerAdded = Players.PlayerAdded:Connect(function(plr)
+		playerAdded = Library:GiveSignal(Players.PlayerAdded:Connect(function(plr)
 			ESP(plr)
-		end)
+		end))
 		for _, plr in Players:GetPlayers() do
 			ESP(plr)
 		end
@@ -625,9 +606,8 @@ function RemoveCustomESP(part)
 end
 
 Options.CustomESPColorPicker:OnChanged(function(color)
-	for i, Table in pairs(Options.CustomESPs:GetActiveValues()) do
-		local part = Table.Object
-		Table["Color"] = color
+	for i, part in pairs(Options.CustomESPs:GetActiveValues()) do
+		CustomESPs[part]["Color"] = color
 		ESPLibrary:UpdateESP(part, part.Name, color)
 	end
 end)
@@ -635,8 +615,8 @@ end)
 Options.CustomESPs:OnChanged(function()
 	local values = Options.CustomESPs:GetActiveValues()
 	if #values == 1 then
-		Options.CustomESPName:SetValue(values[1].Name)
-		Options.CustomESPColorPicker:SetValueRGB(values[1].Color)
+		Options.CustomESPName:SetValue(CustomESPs[values[1]].Name)
+		Options.CustomESPColorPicker:SetValueRGB(CustomESPs[values[1]].Color)
 	end
 end)
 
@@ -860,3 +840,25 @@ Toggles.AutoClothes:OnChanged(function(state)
 		scpchrAdded = nil
 	end
 end)
+
+Loading:SetCurrentStep(1)
+Loading:SetDescription("加载插件中...")
+-- SaveManager
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetLibrary(Library)
+SaveManager:SetFolder("sprout")
+SaveManager:BuildConfigSection(Tabs["UI Settings"])
+SaveManager:LoadAutoloadConfig()
+-- ThemeManager
+ThemeManager:SetLibrary(Library)
+ThemeManager:SetFolder("sprout")
+ThemeManager:ApplyToTab(Tabs["UI Settings"])
+ThemeManager:LoadDefault()
+
+Loading:SetCurrentStep(2)
+Loading:ShowSidebarPage(true)
+Loading.Sidebar:AddLabel("用户: " .. Players.LocalPlayer.Name)
+Loading.Sidebar:AddLabel("当前版本: " .. version)
+Loading:SetDescription("加载完成!")
+task.wait(1)
+Loading:Continue()
